@@ -43,7 +43,7 @@ function decideNextAction()
     end
   end
   
-  if player.energy > 4 and targetInRange then
+  if player.energy > 5 and targetInRange then
     print(colors.red .. "Player in range. Attacking." .. colors.reset)
     ao.send({Target = Game, Action = "PlayerAttack", Player = ao.id, AttackEnergy = tostring(player.energy)})
   else
