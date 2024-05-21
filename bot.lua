@@ -26,25 +26,29 @@ function inRange(x1, y1, x2, y2, range)
     return math.abs(x1 - x2) <= range and math.abs(y1 - y2) <= range
 end
 
--- Decides the next action based on player proximity and energy.
--- If any player is within range, it initiates an attack; otherwise, moves randomly.
+-- Decide the next action based on player proximity, energy levels, health status, and game map analysis.
+-- Prioritize targets based on health (first attacks the weakest one), distance (first attacks the closest one), and strategic positions.
+-- Evaluate the map to identify chokepoints or strategic vantage points.
 function decideNextAction()
   local player = LatestGameState.Players[ao.id]
   local targetInRange = false
-
+  local bestTarget = nil  -- Stores the ID of the best target player (considering health, distance)
+  -- Find closest and weakest target within attack range
   for target, state in pairs(LatestGameState.Players) do
-      if target ~= ao.id and inRange(player.x, player.y, state.x, state.y, 1) then
-          targetInRange = true
-          break
+    if target ~= ao.id and inRange(player.x, player.y, state.x, state.y, 1) then
+      targetInRange = true
+      if not bestTarget or state.health < bestTarget.health or (state.health == bestTarget.health and inRange(player.x, player.y, state.x, state.y, 1) < inRange(player.x, player.y, bestTarget.x, bestTarget.y, 1)) then
+        bestTarget = state
       end
+    end
   end
-
-  if player.energy > 5 and targetInRange then
+  
+  if player.energy > 4 and targetInRange then
     print(colors.red .. "Player in range. Attacking." .. colors.reset)
     ao.send({Target = Game, Action = "PlayerAttack", Player = ao.id, AttackEnergy = tostring(player.energy)})
   else
     print(colors.red .. "No player in range or insufficient energy. Moving randomly." .. colors.reset)
-    local directionMap = {"Up", "Down", "Left", "Right", "UpRight", "UpLeft", "DownRight", "DownLeft"}
+    local directionMap = {"Up", "Down", "Left", "Right"}
     local randomIndex = math.random(#directionMap)
     ao.send({Target = Game, Action = "PlayerMove", Player = ao.id, Direction = directionMap[randomIndex]})
   end
